@@ -157,6 +157,135 @@ Table of Contents
    * L: The total number of messages that the signature scheme 
      can sign.
      
-   * m_i: Message at index i.
+   * msg: The input to be signed by the signature scheme.
+   
+   * gen: The generator corresponding to a given msg.
+   
+   * gen_s: A generator for the blinding value in the signature.
    
    * signature: The digital signature output.
+   
+   * s': The signature blinding factor held by the signature recipient.
+     
+   * blind_signature: The blind digital signature output.
+   
+   * commitment: A pedersen commitment composed of 1 or more messages.
+   
+   * nonce: A cryptographic nonce
+   
+   * challenge: A fiat-shamir heuristic challenge
+   
+   * spk: Zero-Knowledge Signature Proof of Knowledge.
+   
+   * nizk: Non-interactive zero-knowledge proof.
+   
+   * prod_i_j: Product operator starting at the ith index and finishing
+     at jth index.
+   
+   * blake2b: The Blake2b hash function defined in [RFC7693].
+   
+   * dst: The domain separation tag, the ASCII string
+     "BLS12381G1_XMD:BLAKE2B_SSWU_RO_BBS+_SIGNATURES:1_0_0" comprising
+      52 octets.
+      
+   * I2OSP and OS2IP are the functions defined in [RFC8017], Section 4.
+   
+   * a || b denotes the concatenation of octet strings a and b.
+   
+   A pairing-friendly elliptic curve defines the following primitives
+   (see [I-D.irtf-cfrg-pairing-friendly-curves] for detailed
+   discussion):
+   
+   * E1, E2: elliptic curve groups defined over finite fields. This
+     document assumes that E1 has a more compact representation than
+     E2, i.e., because E1 is defined over a smaller field than E2. 
+   
+   * G1, G2: subgroups of E1 and E2 (respectively) having prime order r.
+   
+   * GT: a subgroup, of prime order r, of the multiplicative group of a
+     field extension.
+     
+   * e: G1 x G2 -> GT: a non-degenerate bilinear map.
+   
+   * P1, P2: points on G1 and G2 respectively. For a pairing-friendly
+     curve, this document denotes operations in E1 and E2 in additive
+     notation, i.e., P + Q denotes point addition and x * P denotes
+     scalar multiplication. Operations in GT are written in
+     multiplicative notation, i.e., a * b is field multiplication.
+   
+   * hash_to_curve_g1(ostr) -> P: The cryptographic hash function that
+     takes as an arbitrary octet string input and returns a point in G1
+     as defined in https://datatracker.ietf.org/doc/draft-irtf-cfrg
+     -hash-to-curve/?include_text=1. The algorithm is
+     BLS12381G1_XMD:BLAKE2B_SSWU_RO.
+   
+   * hash_to_curve_g2(ostr) -> P: The cryptographic hash function that
+     takes as an arbitrary octet string input and returns a point in G1
+     as defined in https://datatracker.ietf.org/doc/draft-irtf-cfrg
+     -hash-to-curve/?include_text=1. The algorithm is
+     BLS12381G2_XMD:BLAKE2B_SSWU_RO.
+     
+   * point_to_octets(P) -> ostr: returns the canonical
+     representation of the point P as an octet string.  This
+     operation is also known as serialization.
+     
+   * octets_to_point(ostr) -> P: returns the point P corresponding
+     to the canonical representation ostr, or INVALID if ostr is not
+     a valid output of point_to_octets.  This operation is also
+     known as deserialization.
+     
+   * subgroup_check(P) -> VALID or INVALID: returns VALID when the
+     point P is an element of the subgroup of order r, and INVALID
+     otherwise.  This function can always be implemented by checking
+     that r * P is equal to the identity element.  In some cases,
+     faster checks may also exist, e.g., [Bowe19].
+     
+1.5.  API
+
+   The BBS+ signature scheme defines the following API:
+   
+   * KeyGen(IKM) -> SK: a key generation algorithm that takes as input
+     an octet string comprising secret keying material, and outputs a
+     secret key SK.
+     
+   * SkToPk(SK) -> PK: an algorithm that takes as input a secret key
+     and outputs the corresponding public key.
+     
+   * DpkToPk(DPK, count): an algorithm that takes as input the short
+     public key form or deterministic public key and the number of
+     messages that the key is capable of signing simultaneously and
+     outputs the corresponding public key.
+     
+   * Sign((msg_i,...,msg_L), SK, PK) -> signature: a signing
+     algorithm that generates a randomized signature given a secret
+     key, public key and a vector of messages.
+     
+   * PreBlindSign((msg_i,...,msg_b), (gen_i,...,gen_b), gen_s) ->
+     (commitment, s'): an algorithm that generates a
+     randomized commitment from a vector of messages that will be
+     blind to the signer and generators taken from the public key.
+     The commitment is given to the signer and the blinding factor
+     is retained by the holder to unblind the signature. 
+     
+   * BlindSign(commitment, (msg_j,...,msg_k), (gen_j,...,gen_b), SK,
+     gen_s) -> blind_signature: a signing algorithm
+     that produces a blind signature from a vector of known messages,
+     a commitment from a signature recipient, the remaining generators
+     taken from the public key, and a secret key.
+     
+   * UnblindSign(blind_signature, s') -> signature:
+     an unblinding algorithm that uses a signature blinding value
+     and blind signature and yields a digital signature.
+     
+   * GenerateBlindMessagesProof((msg_i,...,msg_b), (gen_i,...,gen_b),
+     gen_s, nonce) -> nizk: creates a zero-knowledge proof
+     for proving a knowledge about a set of committed messages.
+     
+   * VerifyBlindMessagesProof(nizk, (gen_i,...,gen_b), gen_s, nonce) -> 
+     VALID or INVALID: outputs if a proof of committed messages is VALID
+     or not given a proof, generators, and nonce. 
+     
+   * FiatShamirChallenge(I) -> challenge: an algorithm that outputs
+     a fiat shamir challenge from an octet string.
+     
+   * PoK()
