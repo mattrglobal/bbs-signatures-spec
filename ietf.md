@@ -163,8 +163,11 @@ Table of Contents
    * L: The total number of messages that the signature scheme 
      can sign.
      
-   * R: The set of message indices that are revealed in a signature
-     proof of knowledge.
+   * R: The set of message indices that are retained or hidden in a
+     signature proof of knowledge.
+     
+   * D: The set of message indices that are disclosed in a signature
+     signature proof of knowlege.
      
    * msg: The input to be signed by the signature scheme.
    
@@ -675,5 +678,58 @@ Table of Contents
    4. return c == c_v
      
 2.14. SpkGen
+
+   A signature proof of knowledge generating algorithm that creates
+   a zero-knowledge proof of knowledge of a signature while selectively
+   disclosing messages from a signature, a vector of messages, vector
+   of indices, the signer's public key, and a nonce.
+   
+   spk = SpkGen(PK, (msg_i,...,msg_L), (i,...,R), signature, nonce)
+   
+   Inputs:
+   - PK, octet string in output form from SkToPk, DpkToPk
+   - msg_i,...,msg_L, octet strings
+   - i,...,R, integers
+   - signature, octet string in output form from Sign
+   - nonce, octet string
+   
+   Outputs:
+   - spk, octet string
+   
+   Procedure:
+   1. (A, e, s) = signature
+   1. b = commitment + h0 * s + h_i * msg_i + ... + h_L * msg_L
+   1. r1 = H(PRF(8*ceil(log2(r)))) mod r
+   1. r2 = H(PRF(8*ceil(log2(r)))) mod r
+   1. e~ = H(PRF(8*ceil(log2(r)))) mod r
+   1. r2~ = H(PRF(8*ceil(log2(r)))) mod r
+   1. r3~ = H(PRF(8*ceil(log2(r)))) mod r
+   1. s~ = H(PRF(8*ceil(log2(r)))) mod r
+   1. r3 = r1 ^ -1 mod r
+   1. m~ = \[ R\]
+   1. for i in 0 to R:
+         m~\[i\] = H(PRF(8*ceil(log2(r)))) mod r
+   1. A' = A * r1
+   1. Abar = A' * -e + b * r1
+   1. d = b * r1 + h0 * -r2
+   1. s' = s - r2 * r3
+   1. T1 = A' * -e + h0 * r2
+   1. T2 = d * -r3 + h0 * s' + h_i * m~_i + ... + h_R) * m~_R
+   1. c = H(Abar || A' || h0 || T1 || d || h0 || h_i || ... || h_R ||
+      T2 || nonce)
+   1. e^ = e~ + c * e
+   1. r2^ = r2~ - c * r2
+   1. r3^ = r3~ + c * r3
+   1. s^ = s~ - c * s'
+   1. m^_i = m~_i - c m_i
+   1. spk = (A', Abar, d, e^, r2^, r3^, s^, (m^_i,...,m^_R), c)
+   1. return spk
      
 2.15. SpkVerify
+
+   SpkVerify checks if a signature proof of knowledge is VALID
+   given the signer's public key, a vector of revealed messages,
+   and the proof.
+   
+   result = SpkVerify(spk, PK, )
+    
