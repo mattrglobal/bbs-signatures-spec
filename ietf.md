@@ -168,9 +168,9 @@ Table of Contents
      
    * msg: The input to be signed by the signature scheme.
    
-   * gen: The generator corresponding to a given msg.
+   * h_i: The generator corresponding to a given msg.
    
-   * gen_s: A generator for the blinding value in the signature.
+   * h0: A generator for the blinding value in the signature.
    
    * signature: The digital signature output.
    
@@ -186,9 +186,6 @@ Table of Contents
    
    * nizk: A non-interactive zero-knowledge proof from fiat-shamir
      heuristic.
-   
-   * prod_i_j: Product operator starting at the ith index and finishing
-     at jth index.
    
    * dst: The domain separation tag, the ASCII string
      "BLS12381G1_XMD:BLAKE2B_SSWU_RO_BBS+_SIGNATURES:1_0_0" comprising
@@ -288,33 +285,30 @@ Table of Contents
      an algorithm that outputs VALID if the signature is valid for
      all messages under the public key.
      
-   * PreBlindSign((msg_i,...,msg_U), (gen_i,...,gen_U), gen_s) ->
+   * PreBlindSign((msg_i,...,msg_U), (h_i,...,h_U), h0) ->
      (commitment, s'): an algorithm that generates a
      randomized commitment from a vector of messages that will be
      blind to the signer and generators taken from the public key.
      The commitment is given to the signer and the blinding factor
      is retained by the holder to unblind the signature. 
      
-   * BlindSign(commitment, (msg_i,...,msg_K), (gen_i,...,gen_K), SK,
-     gen_s) -> blind_signature: a signing algorithm
-     that produces a blind signature from a vector of known messages,
-     a commitment from a signature recipient, the remaining generators
-     taken from the public key, and a secret key.
+   * BlindSign(commitment, (msg_i,...,msg_K), (h_i,...,h_K), SK, h0)
+     -> blind_signature: a signing algorithm that produces a blind
+     signature from a vector of known messages, a commitment from a
+     signature recipient, the remaining generators taken from the
+     public key, and a secret key.
      
    * UnblindSign(blind_signature, s') -> signature:
      an unblinding algorithm that uses a signature blinding value
      and blind signature and yields a digital signature.
      
-   * BlindMessagesProofGen((msg_i,...,msg_U), (gen_i,...,gen_U),
-     gen_s, nonce) -> nizk: creates a zero-knowledge proof
+   * BlindMessagesProofGen((msg_i,...,msg_U), (h_i,...,h_U), h0, nonce)
+     -> nizk: creates a zero-knowledge proof
      for proving a knowledge about a set of committed messages.
      
-   * BlindMessagesProofVerify(nizk, (gen_i,...,gen_H), gen_s, nonce) -> 
+   * BlindMessagesProofVerify(nizk, (h_i,...,h_H), h0, nonce) -> 
      VALID or INVALID: outputs if a proof of committed messages is VALID
      or not given a proof, generators, and nonce. 
-     
-   * FiatShamirChallenge(IM) -> challenge: an algorithm that outputs
-     a fiat shamir challenge from an octet string.
      
    * SpkGen(signature, PK, (msg_i,...,msg_L), R, nonce) -> spk: A non 
      interactive zero-knowledge proof generation algorithm from a BBS+
@@ -519,27 +513,167 @@ Table of Contents
    1. (w, h0, h) = PK
    2. e = H(PRF(8*ceil(log2(r)))) mod r
    3. s = H(PRF(8*ceil(log2(r)))) mod r
-   4. b = P1 * h0 ^ s
-   5. for i in 0 to len(h):
-         b *= h1 ^ msg_i
-   6. A = b ^ (1 / (SK + e) )
-   7. signature = (A, e, s)
-   8. return signature
+   4. b = P1 + h0 * s + h_i * msg_i + ... + h_n * msg_n
+   5. A = b * (1 / (SK + e))
+   6. signature = (A, e, s)
+   7. return signature
 
 2.8. Verify
+
+   Verify checks that a signature is valid for the octet string
+   messages under the public key.
+   
+   result = Verify((msg_i,...,msg_n), signature, PK)
+   
+   Inputs:
+   - msg_i,...,msg_n, octet strings.
+   - signature, octet string.
+   - PK, a public key in the format output by SkToPk.
+   
+   Outputs:
+   - result, either VALID or INVALId.
+   
+   Procedure:
+   1. if subgroup_check(signature) is INVALID, return INVALID
+   2. if KeyValidate(PK) is INVALID, return INVALID
+   3. b = P1 + h0 * s + h_i * msg_i + ... + h_n * msg_n
+   4. C1 = e(A, w * P2 ^ e)
+   5. C2 = e(b, P2)
+   6. return C1 == C2
      
 2.9. PreBlindSign
+
+   The PreBlindSign algorithm allows a holder of a signature to blind
+   messages that when signed, are unknown to the signer.
+   
+   The algorithm takes generates a blinding factor that is used to
+   unblind the signature from the signer, and a pedersen commitment
+   from the generators in the signers public key PK and a vector of
+   messages.
+   
+   s', commitment = PreBlindSign((msg_i,...,msg_U),h0, (h_i,...,h_U))
+   
+   Inputs:
+   - msg_i,...,msg_U, octet strings of the messages to be blinded.
+   - h0, octet string.
+   - h_i,...,h_U, octet strings of generators for the messages to
+     be blinded.
+     
+   Outputs:
+   - s', octet string.
+   - commitment, octet string
+   
+   Procedure:
+   1. s' = H(PRF(8*ceil(log2(r)))) mod r
+   2. commitment = h0 * s' + h_i * msg_i + ... + h_U * msg_U
+   3. return s', commitment
      
 2.10. BlindSign
-     
+
+   BlindSign generates a blind signature from a commitment received
+   from a holder, known messages, a secret key, and generators from
+   the corresponding public key.
+   
+   blind_signature = BlindSign(commitment, (msg_i,...msg_K), SK, h0,
+   (h_i,...,h_K))
+   
+   Inputs:
+   - commitment, octet string receive from the holder in output form
+     from PreBlindSign
+   - msg_i,...,msg_K, octet strings
+   - SK, a secret key output from KeyGen
+   - h0, octet string.
+   - h_i,...,h_K, octet strings of generators for the known messages
+   
+   Outputs:
+   - blind_signature, octet string
+   
+   Procedure:
+   1. e = H(PRF(8*ceil(log2(r)))) mod r
+   2. s'' = H(PRF(8*ceil(log2(r)))) mod r
+   3. b = commitment + h0 * s'' + h_i * msg_i + ... + h_K * msg_K
+   4. A = b * (1 / (SK + e))
+   5. blind_signature = (A, e, s'')
+   6. return blind_signature
+   
 2.11. UnblindSign
+
+   UnblindSign computes the unblinded signature given a blind signature
+   and the holder's blinding factor. It is advised to verify the
+   signature after unblinding.
+   
+   signature = UnblindSign(blind_signature, s')
+   
+   Inputs:
+   - s', octet string in output form from PreBlindSign
+   - blind_signature, octet string in output form from BlindSign
+   
+   Outputs:
+   - signature, octet string
+   
+   Procedure:
+   1. (A, e, s'') = blind_signature
+   2. s = s' + s''
+   3. signature = (A, e, s)
+   4. return signature
      
 2.12. BlindMessagesProofGen
+
+   BlindMessagesProofGen creates a proof of committed messages zero-
+   knowledge proof. The proof should be verified before a signer
+   computes a blind signature. The proof is created from a nonce
+   given to the holder from the signer, a vector of messages, a
+   blinding factor output from PreBlindSign, and generators from the
+   signers public key.
+   
+   nizk = BlindMessagesProofGen(commitment, s', (msg_i,...,msg_U), h0,
+   (h_i,...,h_U), nonce)
+   
+   Inputs:
+   - commitment, octet string as output from PreBlindSign
+   - s', octet string as output from PreBlindSign
+   - msg_i,...,msg_U, octet strings of the messages to be blinded.
+   - h0, octet string.
+   - h_i,...,h_U, octet strings of generators for the messages to
+     be blinded.
+   - nonce, octet string.
+     
+   Outputs:
+   - nizk, octet string
+   
+   Procedure:
+   1. r~ = []
+   2. s~ = H(PRF(8*ceil(log2(r)))) mod r
+   3. for i in 0 to U:
+         r~\[i\] = H(PRF(8*ceil(log2(r)))) mod r
+   4. U~ = h0 * s~ + h_i * r~_i + ... + h_U * r~_U
+   5. c = H(commitment || U~ || nonce)
+   6. s^ = s~ + c * s'
+   7. for i in 0 to U:
+         r^\[i\] = r~\[i\] + c * msg_i
+   8. nizk = (c, s^, r^)
      
 2.13. BlindMessagesProofVerify
+
+   BlindMessagesProofVerify checks whether a proof of committed messages
+   zero-knowledge proof is valid.
+   
+   result = BlindMessagesProofVerify(commitment, nizk, nonce)
+   
+   Inputs:
+   - commitment, octet string in output form from PreBlindSign
+   - nizk, octet string in output form from BlindMessagesProofGen
+   - nonce, octet string
+   
+   Outputs:
+   - result, either VALID or INVALId.
+   
+   Procedure:
+   1. (c, s^, r^) = nizk
+   2. U^ = commitment * -c + h0 * s^ + h_i * r^_i + ... + h_U * r^_U
+   3. c_v = H(U || U^ || nonce)
+   4. return c == c_v
      
-2.14. FiatShamirChallenge
+2.14. SpkGen
      
-2.15. SpkGen
-     
-2.16. SpkVerify
+2.15. SpkVerify
