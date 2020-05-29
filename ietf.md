@@ -537,8 +537,8 @@ Table of Contents
    - result, either VALID or INVALId.
    
    Procedure:
-   1. if subgroup_check(signature) is INVALID, return INVALID
-   2. if KeyValidate(PK) is INVALID, return INVALID
+   1. if subgroup_check(signature) is INVALID
+   2. if KeyValidate(PK) is INVALID
    3. b = P1 + h0 * s + h_i * msg_i + ... + h_n * msg_n
    4. C1 = e(A, w * P2 ^ e)
    5. C2 = e(b, P2)
@@ -568,8 +568,10 @@ Table of Contents
    
    Procedure:
    1. s' = H(PRF(8*ceil(log2(r)))) mod r
-   2. commitment = h0 * s' + h_i * msg_i + ... + h_U * msg_U
-   3. return s', commitment
+   1. if subgroup_check(h0) is INVALID abort
+   1. if (subgroup_check(h_i) && ... && subgroup_check(h_U)) is INVALID abort
+   1. commitment = h0 * s' + h_i * msg_i + ... + h_U * msg_U
+   1. return s', commitment
      
 2.10. BlindSign
 
@@ -616,6 +618,8 @@ Table of Contents
    
    Procedure:
    1. (A, e, s'') = blind_signature
+   1. if subgroup_check(A) is INVALID abort
+   1. if (subgroup_check(blind_signature)) is INVALID abort
    2. s = s' + s''
    3. signature = (A, e, s)
    4. return signature
@@ -669,7 +673,7 @@ Table of Contents
    - nonce, octet string
    
    Outputs:
-   - result, either VALID or INVALId.
+   - result, either VALID or INVALID.
    
    Procedure:
    1. (c, s^, r^) = nizk
@@ -698,6 +702,8 @@ Table of Contents
    
    Procedure:
    1. (A, e, s) = signature
+   1. if subgroup_check(A) is INVALID abort
+   1. if KeyValidate(PK) is INVALID abort
    1. b = commitment + h0 * s + h_i * msg_i + ... + h_L * msg_L
    1. r1 = H(PRF(8*ceil(log2(r)))) mod r
    1. r2 = H(PRF(8*ceil(log2(r)))) mod r
@@ -713,23 +719,49 @@ Table of Contents
    1. Abar = A' * -e + b * r1
    1. d = b * r1 + h0 * -r2
    1. s' = s - r2 * r3
-   1. T1 = A' * -e + h0 * r2
-   1. T2 = d * -r3 + h0 * s' + h_i * m~_i + ... + h_R) * m~_R
-   1. c = H(Abar || A' || h0 || T1 || d || h0 || h_i || ... || h_R ||
-      T2 || nonce)
+   1. C1 = A' * e~ + h0 * r2~
+   1. C2 = d * r3~ + h0 * s~ + h_i * m~_i + ... + h_R * m~_R
+   1. c = H(Abar || A' || h0 || C1 || d || h0 || h_i || ... || h_R ||
+      C2 || nonce)
    1. e^ = e~ + c * e
    1. r2^ = r2~ - c * r2
    1. r3^ = r3~ + c * r3
    1. s^ = s~ - c * s'
    1. m^_i = m~_i - c m_i
-   1. spk = (A', Abar, d, e^, r2^, r3^, s^, (m^_i,...,m^_R), c)
+   1. spk = (A', Abar, d, C1, e^, r2^, C2, r3^, s^, (m^_i,...,m^_R))
    1. return spk
      
 2.15. SpkVerify
 
    SpkVerify checks if a signature proof of knowledge is VALID
    given the signer's public key, a vector of revealed messages,
-   and the proof.
+   the proof, and the nonce used in SpkGen.
    
-   result = SpkVerify(spk, PK, )
+   result = SpkVerify(spk, PK, (msg_i,...,msg_D), nonce)
     
+   Inputs:
+   - spk, octet string.
+   - PK, octet string in output form from SkToPk, DpkToPk.
+   - msg_i,...,msg_D, octet strings.
+   - nonce, octet string.
+   
+   Outputs:
+   - result, either VALID or INVALID.
+   
+   Procedure:
+   1. if KeyValidate(PK) is INVALID
+   1. (A', Abar, d, C1, e^, r2^, C2, r3^, s^, (m^_i,...,m^_R)) = spk
+   1. (w, h0, h_i,...,h_L) = PK
+   1. if A' == 1 return INVALID
+   1. X1 = e(A', w)
+   1. X2 = e(Abar, P2)
+   1. if X1 != X2 return INVALID
+   1. c = H(Abar || A' || h0 || C1 || d || h0 || h_i || ... || h_R ||
+      C2 || nonce)
+   1. T1 = Abar - d
+   1. T2 = P1 + h_i * -m^_i + ... + h_D * -m^_D
+   1. Y1 = A' * e^ + h0 * r2^ + T1 * c
+   1. Y2 = d * r3^ + h0 * s^ + h_i * m^_i + ... + h_R * m^_R + T2 * c
+   1. if C1 != Y1 return INVALID
+   1. if C2 != Y2 return INVALID
+   1. return VALID
