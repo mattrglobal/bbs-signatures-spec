@@ -837,8 +837,8 @@ Table of Contents
    [I-D.irtf-cfrg-hash-to-curve].
 
    In addition, ciphersuites MUST specify unique domain separation tags
-   for hash_to_point and hash_pubkey_to_point.  The domain separation
-   tag used in Section 1.4 is the RECOMMENDED one.
+   for hash_to_point.  The domain separation tag used in Section 1.4 is
+   the RECOMMENDED one.
    
 3.6. Use of Contexts
 
@@ -863,8 +863,7 @@ Table of Contents
    verification, and proof functions directly but via some
    other protocol.
    
-   The ZKP protocols require the use of nonces which MUST be different
-   in each context.
+   The ZKP protocols use nonces which MUST be different in each context.
    
 3.7. Choice of Signature Primitive
 
@@ -887,16 +886,7 @@ Table of Contents
    
 5. Test vectors
 
-   IKM: aaaaaaaa
-
-   SK = KeyGen(IKM): csxPwY1AGplWf2efwLRRosnGmzcufHUSHr+bdz3xKQI=
-   
-   DPK = SkToDPK: q4OA1O/iLQyZkwil2XatmWC1nWVSml3rd9UKV8zfy0hKOuzxpq0d
-                  JZhbRCp3tvCIGOkpRfSXKbUU9ns93QUas8n16nv6voGvffPNezqh
-                  nYknkzlnp2CwXgsEuVMp01l5
-                  
-   
-
+TODO:
 
 Appendix A.  BLS12-381
 
