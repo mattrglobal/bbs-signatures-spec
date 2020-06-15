@@ -2,7 +2,7 @@
 
 [Latest Draft](https://mattrglobal.github.io/bbs-signatures-spec/)
 
-BBS+ is a pairing-based cryptographic signature used for signing 1 or more messages. As described in the [BBS+ spec](https://eprint.iacr.org/2016/663.pdf), BBS+ keys function in the following way:
+BBS+ is a pairing-based cryptographic signature used for signing 1 or more messages.
 
 ## Contributing
 
