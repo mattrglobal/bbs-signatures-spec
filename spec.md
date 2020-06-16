@@ -31,18 +31,18 @@ organization = "Mattr"
   email = "tobias.looker@mattr.global"
 %%%
 
-.# Abstract
+# Abstract
 
-BBS+ is a short group digital signature that allows a set of messages to be signed with a single key. The scheme permits a signer and signature holder to be two separate parties. The holder creates a Pedersen commitment which is combined with other messages by the signer to complete a blind signature which can be un-blinded by the holder. Lastly, BBS+ also supports an efficient Zero-Knowledge Signature Proof of Knowledge construction where a holder can selectively disclose any subset of signed messages to another party without revealing the signature or the hidden messages.
+BBS+ is a form of short group digital signature scheme that supports multi-message signing that produces a single output digital signature. The scheme allows a possessor of a signature to derive proofs that selectively reveal from the originally signed set of messages, whilst preserving verifiable authenticity and integrity of the messages. Derived proofs are said to be zero-knowledge in nature as they do not reveal the underlying signature, instead proof of knowledge of the signature.
 
 {mainmatter}
 
 # Introduction
 
-A signature scheme is a fundamental cryptographic primitive that is used to protect authenticity and integrity of communication.  Only the holder of a secret key can sign messages, but anyone can verify the signature using the associated public key.
-  
-Signature schemes are used in point-to-point secure communication protocols, PKI, remote connections, etc.  Designing efficient and secure digital signature is very important for these applications.
-   
+A digital signature scheme is a fundamental cryptographic primitive that is used to provide data integrity and verifiable authenticity in various protocols. The core premise of digital signature technology is built upon asymmetric cryptography where-by the possessor of a private key is able to sign a payload (often revered to as the signer), where anyone in possession of the corresponding public key matching that of the private key is able to verify the signature.
+
+However traditional digital signatures are limited to fixed mode of signing and verifying, that is the entire payload that was signed by a signer must be known by the verifier in-order to validate the digital signature.
+
 This document describes the BBS+ signature scheme. The scheme features many important properties:
 
 1. The signature is over a group of Pedersen commitments--signatures can be created blinded or un-blinded.
@@ -69,10 +69,10 @@ document, are to be interpreted as described in [@!RFC2119].
 The following terminology is used throughout this document:
    
 SK
-: The secret key for the signature scheme
+: The secret key for the signature scheme.
    
 PK
-: The public key for the signature scheme containing all information needed to perform cryptographic operations.
+: The public key for the signature scheme.
      
 DPK
 : The short form of the public key or deterministic public key.
@@ -224,7 +224,9 @@ Because KeyGen is deterministic, implementations MAY choose either to store the 
 
 KeyGen takes an optional parameter, key\_info. This parameter MAY be used to derive multiple independent keys from the same IKM.  By default, key\_info is the empty string.
 
+```
 SK = KeyGen(IKM)
+```
 
 Inputs:
 - IKM, a secret octet string. See requirements above.
@@ -432,10 +434,10 @@ Procedure:
 
 The PreBlindSign algorithm allows a holder of a signature to blind messages that when signed, are unknown to the signer.
 
-The algorithm takes generates a blinding factor that is used to un-blind the signature from the signer, and a pedersen commitment from the generators in the signers public key PK and a vector of messages.
+The algorithm takes in a generated blinding factor that is used to un-blind the signature from the signer, and a pedersen commitment from the generators in the signers public key PK and a vector of messages.
 
 ```
-(s', commitment) = PreBlindSign((msg\_i,...,msg\_U),h0, (h\_i,...,h\_U))
+(s', commitment) = PreBlindSign((msg_i,...,msg_U),h0, (h\_i,...,h\_U))
 ```
 
 Inputs:
@@ -465,7 +467,7 @@ Procedure:
 BlindSign generates a blind signature from a commitment received from a holder, known messages, a secret key, and generators from the corresponding public key.
 
 ``` 
-blind\_signature = BlindSign(commitment, (msg\_i,...msg\_K), SK, h0, (h\_i,...,h\_K))
+blind\_signature = BlindSign(commitment, (msg_i,...msg_K), SK, h0, (h\_i,...,h\_K))
 ```
 
 Inputs:
@@ -497,7 +499,7 @@ Procedure:
 UnblindSign computes the unblinded signature given a blind signature and the holder's blinding factor. It is advised to verify the signature after un-blinding.
 
 ```
-signature = UnblindSign(blind\_signature, s')
+signature = UnblindSign(blind_signature, s')
 ```
 
 Inputs:
@@ -526,7 +528,7 @@ Procedure:
 BlindMessagesProofGen creates a proof of committed messages zero-knowledge proof. The proof should be verified before a signer computes a blind signature. The proof is created from a nonce given to the holder from the signer, a vector of messages, a blinding factor output from PreBlindSign, and generators from the signers public key.
 
 ```
-nizk = BlindMessagesProofGen(commitment, s', (msg\_i,...,msg\_U), h0, (h\_i,...,h\_U), nonce)
+nizk = BlindMessagesProofGen(commitment, s', (msg_i,...,msg_U), h0, (h\_i,...,h\_U), nonce)
 ```
 
 Inputs:
@@ -589,7 +591,7 @@ Procedure:
 A signature proof of knowledge generating algorithm that creates a zero-knowledge proof of knowledge of a signature while selectively disclosing messages from a signature, a vector of messages, vector of indices, the signer's public key, and a nonce.
 
 ```
-spk = SpkGen(PK, (msg\_i,...,msg\_L), (i,...,R), signature, nonce)
+spk = SpkGen(PK, (msg_i,...,msg_L), (i,...,R), signature, nonce)
 ```
 
 Inputs:
@@ -663,7 +665,7 @@ Procedure:
 SpkVerify checks if a signature proof of knowledge is VALID given the signer's public key, a vector of revealed messages, the proof, and the nonce used in SpkGen.
 
 ```
-result = SpkVerify(spk, PK, (msg\_i,...,msg\_D), nonce)
+result = SpkVerify(spk, PK, (msg_i,...,msg_D), nonce)
 ```
 
 Inputs:
