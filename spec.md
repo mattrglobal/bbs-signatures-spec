@@ -155,7 +155,7 @@ hash\_to\_curve\_g1(ostr) -> P
 : The cryptographic hash function that takes as an arbitrary octet string input and returns a point in G1 as defined in [@!I-D.irtf-cfrg-hash-to-curve]. The algorithm is BLS12381G1\_XMD:BLAKE2B\_SSWU\_RO, i.e use Blake2b-512 as part of expand message digest, apply the isogeny simplified SWU map to compute a point in G1 using the random oracle method. The domain separation tag value is dst.
    
 hash\_to\_curve\_g2(ostr) -> P
-: The cryptographic hash function that takes as an arbitrary octet string input and returns a point in G1 as defined in [@!I-D.irtf-cfrg-hash-to-curve]. The algorithm is BLS12381G2\_XMD:BLAKE2B\_SSWU\_RO, i.e use Blake2b-512 as part of expand message digest, apply the isogeny simplified SWU map to compute a point in G2 using the random oracle method. The domain separation tag value is dst.
+: The cryptographic hash function that takes as an arbitrary octet string input and returns a point in G2 as defined in [@!I-D.irtf-cfrg-hash-to-curve]. The algorithm is BLS12381G2\_XMD:BLAKE2B\_SSWU\_RO, i.e use Blake2b-512 as part of expand message digest, apply the isogeny simplified SWU map to compute a point in G2 using the random oracle method. The domain separation tag value is dst.
      
 point\_to\_octets\_min(P) -> ostr
 : returns the canonical representation of the point P as an octet string in compressed form. This operation is also known as serialization.
