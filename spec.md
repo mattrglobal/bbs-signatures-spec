@@ -9,7 +9,7 @@ keyword = [""]
 
 [seriesInfo]
 name = "Individual-Draft"
-value = "bbs-signatures"
+value = "bbs-signatures-00"
 status = "informational"
 
 [[author]]
@@ -31,7 +31,7 @@ organization = "Mattr"
   email = "tobias.looker@mattr.global"
 %%%
 
-# Abstract
+.# Abstract
 
 BBS+ is a form of short group digital signature scheme that supports multi-message signing that produces a single output digital signature. The scheme allows a possessor of a signature to derive proofs that selectively reveal from the originally signed set of messages, whilst preserving verifiable authenticity and integrity of the messages. Derived proofs are said to be zero-knowledge in nature as they do not reveal the underlying signature, instead proof of knowledge of the signature.
 
@@ -95,7 +95,7 @@ D
 msg
 : The input to be signed by the signature scheme.
    
-h\_i
+h\[i\]
 : The generator corresponding to a given msg.
    
 h0
@@ -229,15 +229,19 @@ SK = KeyGen(IKM)
 ```
 
 Inputs:
+
 - IKM, a secret octet string. See requirements above.
 
 Outputs:
+
 - SK, a uniformly random integer such that 0 < SK < r.
 
 Parameters:
+
 - key\_info, an optional octect string. if this is not supplied, it MUST default to an empty string.
     
 Definitions:
+
 - HKDF-Extract is as defined in [@!RFC5869], instantiated with hash H.
 - HKDF-Expand is as defined in [@!RFC5869], instantiated with hash H.
 - I2OSP and OS2IP are as defined in [@!RFC8017], Section 4.
@@ -265,9 +269,11 @@ DPK = SkToDpk(SK)
 ```
 
 Inputs:
+
 - SK, a secret integer such that 0 <= SK <= r
 
 Outputs:
+
 - DPK, a public key encoded as an octet string
 
 Procedure:
@@ -285,25 +291,27 @@ The SkToPk algorithm takes a secret key SK and the number of messages that can b
 SK MUST be indistinguishable from uniformly random modulo r (Section 2.2) and infeasible to guess, e.g., generated using a trusted source of randomness.  KeyGen (Section 2.3) outputs SK meeting these requirements.  Other key generation approaches meeting these requirements MAY also be used; details of such methods are beyond the scope of this document.
 
 ```
-PK = SkToPk(Sk, count)
+PK = SkToPk(Sk, L)
 ```
 
 Inputs:
+
 - SK, a secret integer such that 0 <= SK <= r
-- count, an integer
+- L, an integer, the number of messages to be signed
 
 Outputs:
+
 - PK, a public key encoded as an octet string
 
 Procedure:
 
 1. w = SK \* P2
 
-2. h0 = hash\_to\_curve\_g1( w || I2OSP(0, 1) || I2OSP(0, 4) || I2OSP(0, 1) || I2OSP(count, 4) )
+2. h0 = hash\_to\_curve\_g1( w || I2OSP(0, 1) || I2OSP(0, 4) || I2OSP(0, 1) || I2OSP(L, 4) )
 
-3. h = \[count\]
+3. h = \[L\]
 
-4. for i in 0 to count: h\[i\] = hash\_to\_curve\_g1( w || I2OSP(0, 1) || I2OSP(i + 1, 4) || I2OSP(0, 1) || I2OSP(count, 4) )
+4. for i in 0 to L: h\[i\] = hash\_to\_curve\_g1( w || I2OSP(0, 1) || I2OSP(i + 1, 4) || I2OSP(0, 1) || I2OSP(L, 4) )
 
 5. PK = (w, h0, h)
 
@@ -314,25 +322,27 @@ Procedure:
 DpkToPk converts the short form of the public key to the long form just like SkToPk.
    
 ```   
-PK = DpkToPk(DPK, count)
+PK = DpkToPk(DPK, L)
 ```
 
 Inputs:
+
 - DPK, the short form of the public key
-- count, an integer
+- L, an integer, the number of messages to be signed
 
 Outputs:
+
 - PK, a public key encoded as an octet string
 
 Procedure:
 
 1. w = octets\_to\_point(DPK)
 
-2. h0 = hash\_to\_curve\_g1( w || I2OSP(0, 1) || I2OSP(0, 4) || I2OSP(0, 1) || I2OSP(count, 4) )
+2. h0 = hash\_to\_curve\_g1( w || I2OSP(0, 1) || I2OSP(0, 4) || I2OSP(0, 1) || I2OSP(L, 4) )
 
-3. h = \[count\]
+3. h = \[L\]
 
-4. for i in 0 to count: h\[i\] = hash\_to\_curve\_g1( w || I2OSP(0, 1) || I2OSP(i + 1, 4) || I2OSP(0, 1) || I2OSP(count, 4) )
+4. for i in 0 to L: h\[i\] = hash\_to\_curve\_g1( w || I2OSP(0, 1) || I2OSP(i + 1, 4) || I2OSP(0, 1) || I2OSP(L, 4) )
 
 5. PK = (w, h0, h)
 
@@ -349,9 +359,11 @@ result = KeyValidate(PK)
 ```
 
 Inputs:
+
 - PK, a public key in the format output by SkToPk.
 
 Outputs:
+
 - result, either VALID or INVALID
 
 Procedure:
@@ -369,15 +381,17 @@ Procedure:
 Sign computes a signature from SK, PK, over a vector of messages.
 
 ```   
-signature = Sign((msg\_i,...,msg\_n), SK, PK)
+signature = Sign((msg[i],...,msg[L]), SK, PK)
 ```
 
 Inputs:
-- msg\_i,...,msg\_n, octet strings
+
+- msg\[i\],...,msg\[L\], octet strings
 - SK, a secret key output from KeyGen
 - PK, a public key output from either DpkToPk or SkToPk
 
 Outputs:
+
 - signature, an octet string
 
 Procedure:
@@ -388,7 +402,7 @@ Procedure:
 
 3. s = H(PRF(8*ceil(log2(r)))) mod r
 
-4. b = P1 + h0 \* s + h\_i \* msg\_i + ... + h\_n \* msg\_n
+4. b = P1 + h0 \* s + h\[i\] \* msg\[i\] + ... + h\[n\] \* msg\[L\]
 
 5. A = b \* (1 / (SK + e))
 
@@ -401,16 +415,18 @@ Procedure:
 Verify checks that a signature is valid for the octet string messages under the public key.
 
 ```
-result = Verify((msg\_i,...,msg\_n), signature, PK)
+result = Verify((msg[i],...,msg[L]), signature, PK)
 ```
 
 Inputs:
-- msg\_i,...,msg\_n, octet strings.
+
+- msg\[i\],...,msg\[L\], octet strings.
 - signature, octet string.
 - PK, a public key in the format output by SkToPk.
 
 Outputs:
-- result, either VALID or INVALId.
+
+- result, either VALID or INVALID.
 
 Procedure:
 
@@ -422,9 +438,9 @@ Procedure:
 
 4. if KeyValidate(pub\_key) is INVALID
 
-5. b = P1 + h0 \* s + h\_i \* msg\_i + ... + h\_n \* msg\_n
+5. b = P1 + h0 \* s + h\[i\] \* msg\[i\] + ... + h\[n\] \* msg\[L\]
 
-6. C1 = e(A, w \* P2 ^ e)
+6. C1 = e(A, w + P2 \* e)
 
 7. C2 = e(b, P2)
 
@@ -437,16 +453,18 @@ The PreBlindSign algorithm allows a holder of a signature to blind messages that
 The algorithm takes in a generated blinding factor that is used to un-blind the signature from the signer, and a pedersen commitment from the generators in the signers public key PK and a vector of messages.
 
 ```
-(s', commitment) = PreBlindSign((msg_i,...,msg_U),h0, (h\_i,...,h\_U))
+(s', commitment) = PreBlindSign((msg[i],...,msg[U]), h0, (h[i],...,h[U]))
 ```
 
 Inputs:
-- msg\_i,...,msg\_U, octet strings of the messages to be blinded.
+
+- msg\[i\],...,msg\[U\], octet strings of the messages to be blinded.
 - h0, octet string.
-- h\_i,...,h\_U, octet strings of generators for the messages to
+- h\[i\],...,h\[U\], octet strings of generators for the messages to
     be blinded.
     
 Outputs:
+
 - s', octet string.
 - commitment, octet string
 
@@ -456,9 +474,9 @@ Procedure:
 
 2. if subgroup\_check(h0) is INVALID abort
 
-3. if (subgroup\_check(h\_i) && ... && subgroup\_check(h\_U)) is INVALID abort
+3. if (subgroup\_check(h\[i\]) && ... && subgroup\_check(h\[U\])) is INVALID abort
 
-4. commitment = h0 \* s' + h\_i \* msg\_i + ... + h\_U \* msg\_U
+4. commitment = h0 \* s' + h\[i\] \* msg\[i\] + ... + h\[U\] \* msg\[U\]
 
 5. return s', commitment
 
@@ -467,17 +485,19 @@ Procedure:
 BlindSign generates a blind signature from a commitment received from a holder, known messages, a secret key, and generators from the corresponding public key.
 
 ``` 
-blind\_signature = BlindSign(commitment, (msg_i,...msg_K), SK, h0, (h\_i,...,h\_K))
+blind_signature = BlindSign(commitment, (msg[i],...msg[K]), SK, h0, (h[i],...,h[K]))
 ```
 
 Inputs:
+
 - commitment, octet string receive from the holder in output form from PreBlindSign
-- msg\_i,...,msg\_K, octet strings
+- msg\[i\],...,msg\[K\], octet strings
 - SK, a secret key output from KeyGen
 - h0, octet string.
-- h\_i,...,h\_K, octet strings of generators for the known messages
+- h\[i\],...,h\[K\], octet strings of generators for the known messages
 
 Outputs:
+
 - blind\_signature, octet string
 
 Procedure:
@@ -486,7 +506,7 @@ Procedure:
 
 2. s'' = H(PRF(8 \* ceil(log2(r)))) mod r
 
-3. b = commitment + h0 \* s'' + h\_i \* msg\_i + ... + h\_K \* msg\_K
+3. b = commitment + h0 \* s'' + h\[i\] \* msg\[i\] + ... + h\[K\] \* msg\[K\]
 
 4. A = b \* (1 / (SK + e))
 
@@ -503,10 +523,12 @@ signature = UnblindSign(blind_signature, s')
 ```
 
 Inputs:
+
 - s', octet string in output form from PreBlindSign
 - blind\_signature, octet string in output form from BlindSign
 
 Outputs:
+
 - signature, octet string
 
 Procedure:
@@ -528,37 +550,39 @@ Procedure:
 BlindMessagesProofGen creates a proof of committed messages zero-knowledge proof. The proof should be verified before a signer computes a blind signature. The proof is created from a nonce given to the holder from the signer, a vector of messages, a blinding factor output from PreBlindSign, and generators from the signers public key.
 
 ```
-nizk = BlindMessagesProofGen(commitment, s', (msg_i,...,msg_U), h0, (h\_i,...,h\_U), nonce)
+nizk = BlindMessagesProofGen(commitment, s', (msg[i],...,msg[U]), h0, (h[i],...,h[U]), nonce)
 ```
 
 Inputs:
+
 - commitment, octet string as output from PreBlindSign
 - s', octet string as output from PreBlindSign
-- msg\_i,...,msg\_U, octet strings of the messages to be blinded.
+- msg\[i\],...,msg\[U\], octet strings of the messages to be blinded.
 - h0, octet string.
-- h\_i,...,h\_U, octet strings of generators for the messages to be blinded.
+- h\[i\],...,h\[U\], octet strings of generators for the messages to be blinded.
 - nonce, octet string.
     
 Outputs:
+
 - nizk, octet string
 
 Procedure:
 
-1. r~ = []
+1. r\~ = \[U\]
 
-2. s~ = H(PRF(8 \* ceil(log2(r)))) mod r
+2. s\~ = H(PRF(8 \* ceil(log2(r)))) mod r
 
-3. for i in 0 to U: r~\[i\] = H(PRF(8 \* ceil(log2(r)))) mod r
+3. for i in 0 to U: r\~\[i\] = H(PRF(8 \* ceil(log2(r)))) mod r
 
-4. U~ = h0 \* s~ + h\_i \* r~\_i + ... + h\_U \* r~\_U
+4. U~ = h0 \* s\~ + h\[i\] \* r\~\[i\] + ... + h\[U\] \* r\~\[U\]
 
-5. c = H(commitment || U~ || nonce)
+5. c = H(commitment || U\~ || nonce)
 
-6. s^ = s~ + c \* s'
+6. s^ = s\~ + c \* s'
 
-7. for i in 0 to U: r^\[i\] = r~\[i\] + c \* msg\_i
+7. r^\[i\] = r\~\[i\] + c \* msg\[i\]
 
-8. nizk = (c, s^, r^)
+8. nizk = ( c, s^, r^ )
 
 ## BlindMessagesProofVerify
 
@@ -569,18 +593,20 @@ result = BlindMessagesProofVerify(commitment, nizk, nonce)
 ```
 
 Inputs:
+
 - commitment, octet string in output form from PreBlindSign
 - nizk, octet string in output form from BlindMessagesProofGen
 - nonce, octet string
 
 Outputs:
+
 - result, either VALID or INVALID.
 
 Procedure:
 
-1. (c, s^, r^) = nizk
+1. ( c, s^, r^ ) = nizk
 
-2. U^ = commitment \* -c + h0 \* s^ + h\_i \* r^\_i + ... + h\_U \* r^\_U
+2. U^ = commitment \* -c + h0 \* s^ + h\[i\] \* r^\[i\] + ... + h\[U\] \* r^\[U\]
 
 3. c\_v = H(U || U^ || nonce)
 
@@ -591,17 +617,19 @@ Procedure:
 A signature proof of knowledge generating algorithm that creates a zero-knowledge proof of knowledge of a signature while selectively disclosing messages from a signature, a vector of messages, vector of indices, the signer's public key, and a nonce.
 
 ```
-spk = SpkGen(PK, (msg_i,...,msg_L), (i,...,R), signature, nonce)
+spk = SpkGen(PK, (msg[i],...,msg[L]), (i,...,R), signature, nonce)
 ```
 
 Inputs:
+
 - PK, octet string in output form from SkToPk, DpkToPk
-- msg\_i,...,msg\_L, octet strings
+- msg\[i\],...,msg\[L\], octet strings
 - i,...,R, integers
 - signature, octet string in output form from Sign
 - nonce, octet string
 
 Outputs:
+
 - spk, octet string
 
 Procedure:
@@ -612,23 +640,23 @@ Procedure:
 
 3. if KeyValidate(PK) is INVALID abort
 
-4. b = commitment + h0 \* s + h\_i \* msg\_i + ... + h\_L \* msg\_L
+4. b = commitment + h0 \* s + h\[i\] \* msg\[i\] + ... + h\[L\] \* msg\[L\]
 
 5. r1 = H(PRF(8\*ceil(log2(r)))) mod r
 
 6. r2 = H(PRF(8\*ceil(log2(r)))) mod r
 
-7. e~ = H(PRF(8\*ceil(log2(r)))) mod r
+7. e\~ = H(PRF(8\*ceil(log2(r)))) mod r
 
-8. r2~ = H(PRF(8\*ceil(log2(r)))) mod r
+8. r2\~ = H(PRF(8\*ceil(log2(r)))) mod r
 
-9. r3~ = H(PRF(8\*ceil(log2(r)))) mod r
+9. r3\~ = H(PRF(8\*ceil(log2(r)))) mod r
 
-10. s~ = H(PRF(8\*ceil(log2(r)))) mod r
+10. s\~ = H(PRF(8\*ceil(log2(r)))) mod r
 
 11. r3 = r1 ^ -1 mod r
 
-12. m~ = \[ R\]
+12. m\~ = \[R\]
 
 13. for i in 0 to R: m~\[i\] = H(PRF(8*ceil(log2(r)))) mod r
 
@@ -640,23 +668,23 @@ Procedure:
 
 17. s' = s - r2 \* r3
 
-18. C1 = A' \* e~ + h0 \* r2~
+18. C1 = A' \* e\~ + h0 \* r2\~
 
-19. C2 = d \* r3~ + h0 \* s~ + h\_i \* m~\_i + ... + h\_R \* m~\_R
+19. C2 = d \* r3\~ + h0 \* s\~ + h\[i\] \* m\~\[i\] + ... + h\[R\] \* m\~\[R\]
 
-20. c = H(Abar || A' || h0 || C1 || d || h0 || h\_i || ... || h\_R || C2 || nonce)
+20. c = H(Abar || A' || h0 || C1 || d || h0 || h\[i\] || ... || h\[R\] || C2 || nonce)
 
-21. e^ = e~ + c \* e
+21. e^ = e\~ + c \* e
 
-22. r2^ = r2~ - c \* r2
+22. r2^ = r2\~ - c \* r2
 
-23. r3^ = r3~ + c \* r3
+23. r3^ = r3\~ + c \* r3
 
-24. s^ = s~ - c \* s'
+24. s^ = s\~ - c \* s'
 
-25. m^\_i = m~\_i - c m\_i
+25. for i in 0 to R: m^\[i\] = m~\[i\] - c \* msg\[i\]
 
-26. spk = (A', Abar, d, C1, e^, r2^, C2, r3^, s^, (m^\_i,...,m^\_R))
+26. spk = ( A', Abar, d, C1, e^, r2^, C2, r3^, s^, (m^\[i\], ..., m^\[R\]) )
 
 27. return spk
 
@@ -665,25 +693,27 @@ Procedure:
 SpkVerify checks if a signature proof of knowledge is VALID given the signer's public key, a vector of revealed messages, the proof, and the nonce used in SpkGen.
 
 ```
-result = SpkVerify(spk, PK, (msg_i,...,msg_D), nonce)
+result = SpkVerify(spk, PK, (msg[i],...,msg[D]), nonce)
 ```
 
 Inputs:
+
 - spk, octet string.
 - PK, octet string in output form from SkToPk, DpkToPk.
-- msg\_i,...,msg\_D, octet strings.
+- msg\[i\],...,msg\[D\], octet strings.
 - nonce, octet string.
 
 Outputs:
+
 - result, either VALID or INVALID.
 
 Procedure:
 
 1. if KeyValidate(PK) is INVALID
 
-2. (A', Abar, d, C1, e^, r2^, C2, r3^, s^, (m^\_i,...,m^\_R)) = spk
+2. (A', Abar, d, C1, e^, r2^, C2, r3^, s^, (m^\[i\],...,m^\[R\])) = spk
 
-3. (w, h0, h\_i,...,h\_L) = PK
+3. (w, h0, h\[i\],...,h\[L\]) = PK
 
 4. if A' == 1 return INVALID
 
@@ -693,15 +723,15 @@ Procedure:
 
 7. if X1 != X2 return INVALID
 
-8. c = H(Abar || A' || h0 || C1 || d || h0 || h\_i || ... || h\_R || C2 || nonce)
+8. c = H(Abar || A' || h0 || C1 || d || h0 || h\[i\] || ... || h\[R\] || C2 || nonce)
 
 9. T1 = Abar - d
 
-10. T2 = P1 + h\_i \* -m^\_i + ... + h\_D \* -m^\_D
+10. T2 = P1 + h\[i\] \* msg\[i\] + ... + h\[D\] \* msg\[D\]
 
 11. Y1 = A' \* e^ + h0 \* r2^ + T1 \* c
 
-12. Y2 = d \* r3^ + h0 \* s^ + h\_i \* m^\_i + ... + h\_R \* m^\_R + T2 \* c
+12. Y2 = d \* r3^ + h0 \* s^ + h\[i\] \* m^\[i\] + ... + h\[R\] \* m^\[R\] - T2 \* c
 
 13. if C1 != Y1 return INVALID
 
@@ -777,7 +807,7 @@ The cipher-suites in Section 4 are based upon the BLS12-381 pairing-friendly ell
 
 * E2, G2: the curve E' and its order-r subgroup.
 
-* GT: the subgroup G_T.
+* GT: the subgroup G\_T.
 
 * P1: the point BP.
 
@@ -785,7 +815,7 @@ The cipher-suites in Section 4 are based upon the BLS12-381 pairing-friendly ell
 
 * e: the optimal Ate pairing defined in Appendix A of [@!I-D.irtf-cfrg-pairing-friendly-curves].
 
-* point_to_octets and octets_to_point use the compressed serialization formats for E1 and E2 defined by [ZCash].
+* point\_to\_octets and octets\_to\_point use the compressed serialization formats for E1 and E2 defined by [ZCash].
 
 * subgroup_check MAY use either the naive check described in Section 1.3 or the optimized check given by [Bowe19].
 
